@@ -57,7 +57,7 @@ print(f'Accuracy: {round(score*100,2)}%')
 #Build confusion matrix.
 confusion_matrix(y_test, y_pred, labels=['FAKE', 'TRUE'])
 ```
-It's accuracy should be 99.43%. Actually it is pretty high. But if you just take a look to the True datas you can see nearly every single of them starts with '*A location name* (Reuters) -'. And I think it causes biases and unreal results. So first I am going to delete (Reuters) substrings then checking results again. Then I erase every '*A location name* (Reuters) -' pattern in the data.
+It's accuracy 99.48% for me. Actually it is pretty high. But if you just take a look to the True datas you can see nearly every single of them starts with '*A location name* (Reuters) -'. And I think it causes biases and unreal results. So first I am going to delete (Reuters) substrings then checking results again. Then I erase every '*A location name* (Reuters) -' pattern in the data.
 
 ## Training with removing '(Reuters)' brand
 
@@ -92,7 +92,7 @@ y_pred = pac2.predict(tfidf_test)
 score = accuracy_score(y_test, y_pred)
 print(f'Accuracy: {round(score*100,2)}%')
 ```
-Now you can see our accuract is slightly decreased. Now it should be 98.86%. I want to see how our accuracy decrasing if we remove location names as well.
+Now you can see our accuract is slightly decreased. Now it should be 98.89%. I want to see how our accuracy decrasing if we remove location names as well.
 
 ## Training with removing locations and (Reuters) brand
 
@@ -138,4 +138,55 @@ y_pred = pac3.predict(tfidf_test)
 score = accuracy_score(y_test, y_pred)
 print(f'Accuracy: {round(score*100,2)}%')
 ```
-Now we are getting 98.81% accuracy. It nearly didn't changed at all.
+Now we are getting 98.82% accuracy. It nearly didn't changed at all.
+
+## Testing with different dataset
+
+Finally I would like to test with completely different dataset.
+
+I used this dataset: https://www.kaggle.com/datasets/saurabhshahane/fake-news-classification
+
+Now I need to inform you about a mistake in data card about this dataset. It says label 1 is refers to True, 0 is Fake. But it is wrong. You can see in discussion.
+
+So we'll replace labels.
+```
+new_set = pd.read_csv("for_test/WELFake_Dataset.csv")
+
+#Replacing labels 0 to TRUE, 1 to FAKE
+new_set['label'] = new_set['label'].replace(0,'TRUE')
+new_set['label'] = new_set['label'].replace(1,'FAKE')
+```
+
+This dataset includes some null values. We have to check that and remove them.
+```
+#To check if we have any null values.
+new_set['text'].isna().sort_values()
+
+new_set = new_set.dropna(axis=0, subset=['text'])
+new_set['text'].isna().sort_values()
+```
+
+Now we are good to go. First I want to try the first trained model. Which is trained withouth any process.
+
+```
+#First try with the model that we trained first way
+new_test = tfidf_vec.transform(new_set['text'])
+
+y_pred = pac.predict(new_test)
+score = accuracy_score(new_set['label'], y_pred)
+print(f'Accuracy: {round(score*100,2)}%')
+```
+Accuracy score is 83.05% for me.
+
+Ok. Let's try the model we trained with the last method.
+
+```
+#Now try with the last method
+new_test = tfidf_vec3.transform(new_set['text'])
+
+y_pred = pac3.predict(new_test)
+score = accuracy_score(new_set['label'], y_pred)
+print(f'Accuracy: {round(score*100,2)}%')
+```
+
+Accuracy is 83.72% this time. So the rearrangement that we did is worked. It predict better.
